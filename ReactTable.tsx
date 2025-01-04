@@ -145,6 +145,85 @@ const ReactTable: React.FC<TableProps> = ({
   const [isResize, setIsResize] = useState<string | false>(false);
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active && over && active.id !== over.id) {
+      const currentOrder = table.getState().columnOrder;
+      let newOrder = [];
+      const oldIndex = currentOrder.indexOf(active.id as string);
+      const newIndex = currentOrder.indexOf(over.id as string);
+      newOrder = arrayMove(currentOrder, oldIndex, newIndex); // this is just a splice util
+      table.setState((prev) => ({ ...prev, columnOrder: newOrder }));
+    }
+  };
+
+  const resetChangedRows = () => {
+    setChangedRows([]);
+    table.setRowSelection({});
+  };
+
+  const handleToggle = (id: string) => {
+    if (expandId) {
+      setExpandId(null);
+      setExpandId(id);
+    }
+    if (id === expandId) {
+      setExpandId(null);
+    } else {
+      setExpandId(id);
+    }
+  };
+  const onConfirm = (state: State) => {
+    table.setState((prevState) => ({
+      ...prevState,
+      columnVisibility: state.columnVisibility,
+      columnOrder: state.orderColumns,
+    }));
+  };
+
+  const onReset = () => {
+    table.setState((prevState) => ({
+      ...prevState,
+      columnVisibility: baseColumnVisibility,
+      columnOrder: baseColumnOrder,
+    }));
+  };
+
+  const onCloseModal = () => {
+    setIsOpenModal(false);
+  };
+
+  const onSettingsClick = () => {
+    setIsOpenModal(true);
+  };
+
+  const onHeaderClick = ({ key, colId }: { key: string; colId: string }) => {
+    if (isResize !== false) return;
+
+    const params = {
+      order: key as string,
+      ascending: orderParams?.order === key ? !orderParams?.ascending : false,
+    };
+
+    setOrderPrams(params);
+    setOrderColId(colId);
+
+    dispatch(
+      saveOrderState({
+        index: pathname,
+        state: { orderColId: colId, orderParams: params },
+        userId,
+      })
+    );
+  };
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, {}),
+    useSensor(TouchSensor, {}),
+    useSensor(PointerSensor, { activationConstraint: { distance: 0.1 } })
+  );
+
   useEffect(() => {
     if (docTypeIdForPresets) dispatch(setCurrentDocTypeId(docTypeIdForPresets));
   }, [docTypeIdForPresets]);
@@ -206,89 +285,11 @@ const ReactTable: React.FC<TableProps> = ({
     return () => window.removeEventListener("resize", handler);
   }, []);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (active && over && active.id !== over.id) {
-      const currentOrder = table.getState().columnOrder;
-      let newOrder = [];
-      const oldIndex = currentOrder.indexOf(active.id as string);
-      const newIndex = currentOrder.indexOf(over.id as string);
-      newOrder = arrayMove(currentOrder, oldIndex, newIndex); // this is just a splice util
-      table.setState((prev) => ({ ...prev, columnOrder: newOrder }));
-    }
-  };
-
-  const sensors = useSensors(
-    useSensor(MouseSensor, {}),
-    useSensor(TouchSensor, {}),
-    useSensor(PointerSensor, { activationConstraint: { distance: 0.1 } })
-  );
-
-  const resetChangedRows = () => {
-    setChangedRows([]);
-    table.setRowSelection({});
-  };
-
   useEffect(() => {
     const changedRow = Object.keys(table.getState().rowSelection);
     const changedIds = changedRow.map((item) => data[+item]);
     setChangedRows(changedIds);
   }, [table.getState().rowSelection, data]);
-
-  const handleToggle = (id: string) => {
-    if (expandId) {
-      setExpandId(null);
-      setExpandId(id);
-    }
-    if (id === expandId) {
-      setExpandId(null);
-    } else {
-      setExpandId(id);
-    }
-  };
-  const onConfirm = (state: State) => {
-    table.setState((prevState) => ({
-      ...prevState,
-      columnVisibility: state.columnVisibility,
-      columnOrder: state.orderColumns,
-    }));
-  };
-
-  const onReset = () => {
-    table.setState((prevState) => ({
-      ...prevState,
-      columnVisibility: baseColumnVisibility,
-      columnOrder: baseColumnOrder,
-    }));
-  };
-
-  const onCloseModal = () => {
-    setIsOpenModal(false);
-  };
-
-  const onSettingsClick = () => {
-    setIsOpenModal(true);
-  };
-
-  const onHeaderClick = ({ key, colId }: { key: string; colId: string }) => {
-    if (isResize !== false) return;
-
-    const params = {
-      order: key as string,
-      ascending: orderParams?.order === key ? !orderParams?.ascending : false,
-    };
-
-    setOrderPrams(params);
-    setOrderColId(colId);
-
-    dispatch(
-      saveOrderState({
-        index: pathname,
-        state: { orderColId: colId, orderParams: params },
-        userId,
-      })
-    );
-  };
 
   useEffect(() => {
     const resize = table.getState().columnSizingInfo?.isResizingColumn;

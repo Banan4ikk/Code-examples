@@ -55,31 +55,6 @@ const TableConfigModal: React.FC<TableConfigModalProps> = ({
   const [visibleSelect, setVisibleSelect] = useState(null);
   const [hiddenSelect, setHiddenSelect] = useState(null);
 
-  useEffect(() => {
-    setVisibleCols(columns.filter((col) => col.getIsVisible()));
-    setHiddenCols(columns.filter((col) => !col.getIsVisible()));
-  }, []);
-
-  useEffect(() => {
-    setVisibleCols([]);
-    setHiddenCols([]);
-    const visibleIds = Object.entries(visibilityState)
-      // eslint-disable-next-line array-callback-return,consistent-return
-      .map(([key, value]) => {
-        if (value) return key;
-        const col = columns.find((item) => item.id === key);
-        setHiddenCols((prevState) => [...prevState, col]);
-      })
-      .filter((item) => item);
-
-    const colsWithOrder = order.filter((item) => visibleIds.includes(item));
-    // eslint-disable-next-line array-callback-return
-    colsWithOrder.map((orderColumn) => {
-      const col = columns.find((item) => item.id === orderColumn);
-      setVisibleCols((prevState) => [...prevState, col]);
-    });
-  }, [visibilityState, onClose, order]);
-
   const resetSelection = () => {
     setVisibleSelect(null);
     setHiddenSelect(null);
@@ -146,6 +121,32 @@ const TableConfigModal: React.FC<TableConfigModalProps> = ({
   };
 
   const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}));
+
+
+  useEffect(() => {
+    setVisibleCols(columns.filter((col) => col.getIsVisible()));
+    setHiddenCols(columns.filter((col) => !col.getIsVisible()));
+  }, []);
+
+  useEffect(() => {
+    setVisibleCols([]);
+    setHiddenCols([]);
+    const visibleIds = Object.entries(visibilityState)
+      // eslint-disable-next-line array-callback-return,consistent-return
+      .map(([key, value]) => {
+        if (value) return key;
+        const col = columns.find((item) => item.id === key);
+        setHiddenCols((prevState) => [...prevState, col]);
+      })
+      .filter((item) => item);
+
+    const colsWithOrder = order.filter((item) => visibleIds.includes(item));
+    // eslint-disable-next-line array-callback-return
+    colsWithOrder.map((orderColumn) => {
+      const col = columns.find((item) => item.id === orderColumn);
+      setVisibleCols((prevState) => [...prevState, col]);
+    });
+  }, [visibilityState, onClose, order]);
 
   return (
     <Modal
